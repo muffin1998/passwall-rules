@@ -75,9 +75,23 @@ sed -e "s|\(.*\)|server \1 -group $DIRECT_DNS_GROUP --exclude-default-group|" ${
 # sed -e "s|\(.*\)|server \1|" ${PROXY_DNS_SERVERS} > ${DNS_PROXY_SERVER_RULES}
 echo "server ${PROXY_GATEWAY}" > ${DNS_PROXY_SERVER_RULES}
 :> ${DNS_CONF}
+echo \
+'server-name smartdns
+serve-expired yes
+dnsmasq-lease-file /tmp/dhcp.leases
+rr-ttl-min 600
+log-size 64K
+log-num 1
+log-level error
+cache-persist yes
+cache-file /etc/smartdns/smartdns.cache
+force-qtype-SOA  65
+resolv-file /tmp/resolv.conf.d/resolv.conf.auto' >> ${DNS_CONF}
 # echo "bind :$DNS_DIRECT_PORT -group $DIRECT_DNS_GROUP" >> ${DNS_CONF}
 # echo "bind :$DNS_PROXY_PROT" >> ${DNS_CONF}
-echo "bind :$DNS_PROXY_PROT" >> ${DNS_CONF}
+echo "" >> ${DNS_CONF}
+echo "bind [::]:$DNS_PROXY_PROT" >> ${DNS_CONF}
+echo "bind-tcp [::]:$DNS_PROXY_PROT" >> ${DNS_CONF}
 # disable ipv6 resolve by default
 echo "force-AAAA-SOA yes" >> ${DNS_CONF}
 echo "conf-file $DNS_DIRECT_ADDRESS_RULES" >> ${DNS_CONF}
@@ -148,11 +162,11 @@ echo "[ -z \"\$(cat $FIREWALL_USER_CONFIG | grep \"sh $IPTABLES_RULES\")\" ] \\
     && echo \"sh $IPTABLES_RULES\" >> $FIREWALL_USER_CONFIG" >> ${STARTUP_SCRIPT}
 echo "fw3 restart" >> ${STARTUP_SCRIPT}
 echo "#smartdns conf" >> ${STARTUP_SCRIPT}
-echo "cp $SHELL_FOLDER/smartdns.conf /var/etc/smartdns/" >> ${STARTUP_SCRIPT}
-echo "[ -z \"\$(cat $DNS_USER_CONF | grep \"conf-file $DNS_CONF\")\" ] \\
-    && echo \"\" >> $DNS_USER_CONF \\
-    && echo \"conf-file $DNS_CONF\" >> $DNS_USER_CONF" >> ${STARTUP_SCRIPT}
+# echo "cp $SHELL_FOLDER/smartdns.conf /var/etc/smartdns/" >> ${STARTUP_SCRIPT}
+# echo "[ -z \"\$(cat $DNS_USER_CONF | grep \"conf-file $DNS_CONF\")\" ] \\
+#     && echo \"\" >> $DNS_USER_CONF \\
+#     && echo \"conf-file $DNS_CONF\" >> $DNS_USER_CONF" >> ${STARTUP_SCRIPT}
 echo "killall -q smartdns" >> ${STARTUP_SCRIPT} 
-echo "smartdns -c /var/etc/smartdns/smartdns.conf" >> ${STARTUP_SCRIPT} 
+echo "smartdns -c $DNS_CONF" >> ${STARTUP_SCRIPT} 
 chmod +x ${STARTUP_SCRIPT}
 
