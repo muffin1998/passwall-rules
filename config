@@ -18,6 +18,7 @@ DNS_USER_CONF=/etc/smartdns/custom.conf
 DIRECT_IPSET_RULES=output/direct_ipset_rules.sh
 IPTABLES_RULES=output/iptables_rules.sh
 IP_ROUTE_RULES=output/ip_route_rules.sh
+FIREWALL_RULES=output/firewall-rules.sh
 DNS_DIRECT_DOMAIN_RULES=output/direct-domain-rules.conf
 DNS_DIRECT_ADDRESS_RULES=output/direct-address-rules.conf
 DNS_DIRECT_SERVER_RULES=output/direct-dns-server-rules.conf
