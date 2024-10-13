@@ -95,8 +95,13 @@ resolv-file /tmp/resolv.conf.d/resolv.conf.auto' >> ${DNS_CONF}
 # echo "bind :$DNS_DIRECT_PORT -group $DIRECT_DNS_GROUP" >> ${DNS_CONF}
 # echo "bind :$DNS_PROXY_PROT" >> ${DNS_CONF}
 echo "" >> ${DNS_CONF}
-echo "bind [::]:$DNS_PROXY_PROT" >> ${DNS_CONF}
-echo "bind-tcp [::]:$DNS_PROXY_PROT" >> ${DNS_CONF}
+if [ $ENABLE_IPV6_DNS_SERVER == 'true' ]; then
+    echo "bind [::]:$DNS_PROXY_PROT" >> ${DNS_CONF}
+    echo "bind-tcp [::]:$DNS_PROXY_PROT" >> ${DNS_CONF}
+else
+    echo "bind :$DNS_PROXY_PROT" >> ${DNS_CONF}
+    echo "bind-tcp :$DNS_PROXY_PROT" >> ${DNS_CONF}
+fi
 # disable ipv6 resolve by default
 echo "force-AAAA-SOA yes" >> ${DNS_CONF}
 echo "conf-file $DNS_DIRECT_ADDRESS_RULES" >> ${DNS_CONF}
