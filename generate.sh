@@ -179,9 +179,8 @@ echo "sh $IP_ROUTE_RULES" >> ${STARTUP_SCRIPT}
 echo "#execute iptables rules" >> ${STARTUP_SCRIPT}
 echo "[ -z \"\$(cat $FIREWALL_USER_CONFIG | grep \"sh $IPTABLES_RULES\")\" ] \\
     && echo \"\" >> $FIREWALL_USER_CONFIG \\
-    && echo \"sh $IPTABLES_RULES\" >> $FIREWALL_USER_CONFIG
+    && echo \"sh $IPTABLES_RULES\" >> $FIREWALL_USER_CONFIG \\
     && fw3 restart" >> ${STARTUP_SCRIPT}
-echo "fw3 restart" >> ${STARTUP_SCRIPT}
 echo "#smartdns conf" >> ${STARTUP_SCRIPT}
 # echo "cp $SHELL_FOLDER/smartdns.conf /var/etc/smartdns/" >> ${STARTUP_SCRIPT}
 # echo "[ -z \"\$(cat $DNS_USER_CONF | grep \"conf-file $DNS_CONF\")\" ] \\
