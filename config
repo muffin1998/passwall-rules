@@ -8,6 +8,7 @@ DNS_DIRECT_PORT=53
 DNS_SPEED_CHECK_MODE=ping,tcp:80
 ALLOW_PROXY_DEVICE=allow_proxy_device
 DIRECT_IP_LIST=direct_ip_list
+RESERVED_IP_LIST=reserved_ip_list
 DIRECT_DOMAINS=direct_domain_list
 FORCE_DIRECT_DOMAINS=force_direct_domain_list
 DIRECT_DNS_SERVERS=direct_dns_server_list
@@ -24,5 +25,6 @@ DNS_PROXY_SERVER_RULES=output/fallback-dns-server-rules.conf
 DNS_CONF=output/smartdns.conf
 STARTUP_SCRIPT=output/startup.sh
 FORWARD_INTERFACE=br-lan
+ENABLE_IPV6_DNS_SERVER=true
 
 
