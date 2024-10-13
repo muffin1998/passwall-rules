@@ -177,7 +177,7 @@ echo "conf-file $DNS_DIRECT_DOMAIN_RULES" >> ${DNS_CONF}
 # generate startup script
 :> ${STARTUP_SCRIPT}
 echo "#execute ipset rules" >> ${STARTUP_SCRIPT}
-echo "sh $DIRECT_IPSET_RULES" >> ${STARTUP_SCRIPT}
+# echo "sh $DIRECT_IPSET_RULES" >> ${STARTUP_SCRIPT}
 echo "#execute iproute rules" >> ${STARTUP_SCRIPT}
 echo "sh $IP_ROUTE_RULES" >> ${STARTUP_SCRIPT}
 echo "#execute iptables rules" >> ${STARTUP_SCRIPT}
