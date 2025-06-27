@@ -1,7 +1,7 @@
 #!/bin/sh
 
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
-CONFIG_PATH="/var/etc/proxy"
+CONFIG_PATH="/var/run/proxy"
 
 . ${SHELL_FOLDER}/config
 
@@ -34,7 +34,6 @@ DNS_DIRECT_ADDRESS_RULES=$SHELL_FOLDER/output/direct-address-rules.conf
 DNS_DIRECT_SERVER_RULES=$SHELL_FOLDER/output/direct-dns-server-rules.conf
 DNS_PROXY_SERVER_RULES=$SHELL_FOLDER/output/fallback-dns-server-rules.conf
 DNS_CONF=$SHELL_FOLDER/output/smartdns.conf
-STARTUP_SCRIPT=$SHELL_FOLDER/output/startup.sh
 
 # config path
 CONFIG_IPTABLES_RULES=$CONFIG_PATH/iptables_rules.sh
@@ -47,6 +46,9 @@ CONFIG_DNS_DIRECT_SERVER_RULES=$CONFIG_PATH/direct-dns-server-rules.conf
 CONFIG_DNS_PROXY_SERVER_RULES=$CONFIG_PATH/fallback-dns-server-rules.conf
 CONFIG_DNS_CONF=$CONFIG_PATH/smartdns.conf
 
+STARTUP_SCRIPT=$SHELL_FOLDER/startup.sh
+INIT_SCRIPT=$SHELL_FOLDER/init.sh
+
 
 #[ -n "\"\$\(ipset list $china_ipset\)\"" ] && 
 
@@ -56,7 +58,6 @@ mkdir ${SHELL_FOLDER}/output
 echo "generate firewall rules"
 :> ${NFT_RULES}
 # echo "delete table ip proxy" >> ${FIREWALL_RULES}
-echo "delete table ip proxy" >> ${NFT_RULES}
 echo "add table ip proxy" >> ${NFT_RULES}
 echo "add chain ip proxy prerouting_mark { type filter hook prerouting priority -100; policy accept; }" >> ${NFT_RULES}
 echo "add chain ip proxy prerouting_redirect { type nat hook prerouting priority -100; policy accept; }" >> ${NFT_RULES}
@@ -84,13 +85,15 @@ echo "add rule ip proxy prerouting_redirect ether saddr @allow_proxy_device tcp 
     sed 's/DST_PORT/'$DNS_PROXY_PROT'/' >> ${NFT_RULES}
 
 :> ${FIREWALL_RULES}
+echo  -e "#!/bin/sh\n" >> ${FIREWALL_RULES}
+echo "nft delete table ip proxy" >> ${FIREWALL_RULES}
 echo "nft -f ${CONFIG_NFT_RULES}" >> ${FIREWALL_RULES}
 chmod +x ${FIREWALL_RULES}
 echo "generate firewall rules done"
 
 # generate ip route rules
 echo "generate ip route rules"
-echo "#!/bin/sh" > ${IP_ROUTE_RULES}
+echo -e "#!/bin/sh\n" > ${IP_ROUTE_RULES}
 echo "ip rule flush table $PROXY_ROUTE_TABLE" >> ${IP_ROUTE_RULES}
 echo "ip rule add fwmark $PROXY_MARK lookup $PROXY_ROUTE_TABLE" >> ${IP_ROUTE_RULES}
 echo "ip route flush table $PROXY_ROUTE_TABLE" >> ${IP_ROUTE_RULES}
@@ -145,6 +148,8 @@ echo "conf-file $CONFIG_DNS_DIRECT_DOMAIN_RULES" >> ${DNS_CONF}
 # generate startup script
 :> ${STARTUP_SCRIPT}
 echo -e "#!/bin/sh\n" >> ${STARTUP_SCRIPT}
+echo "rm -r $CONFIG_PATH" >> ${STARTUP_SCRIPT}
+echo "cp -r $SHELL_FOLDER/output $CONFIG_PATH" >> ${STARTUP_SCRIPT}
 echo "#execute iproute rules" >> ${STARTUP_SCRIPT}
 echo "sh $CONFIG_IP_ROUTE_RULES" >> ${STARTUP_SCRIPT}
 echo "#execute iptables rules" >> ${STARTUP_SCRIPT}

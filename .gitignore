@@ -2,3 +2,4 @@ output/*
 tmp/*
 direct_domain_list
 direct_ip_list
+startup.sh
