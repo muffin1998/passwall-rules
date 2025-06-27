@@ -1,2 +1,4 @@
 output/*
-allow_proxy_device
+tmp/*
+direct_domain_list
+direct_ip_list
