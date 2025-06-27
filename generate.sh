@@ -1,7 +1,7 @@
 #!/bin/sh
 
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
-CONFIG_PATH="/var/run/proxy"
+CONFIG_PATH="/var/etc/proxy"
 
 . ${SHELL_FOLDER}/config
 
