@@ -1,6 +1,7 @@
 #!/bin/sh
 
 SHELL_FOLDER=$(cd "$(dirname "$0")";pwd)
+CONFIG_PATH="/var/run/proxy"
 
 . ${SHELL_FOLDER}/config
 
@@ -10,54 +11,48 @@ echo "  - PROXY_MARK = $PROXY_MARK"
 echo "  - PROXY_ROUTE_TABLE = $PROXY_ROUTE_TABLE"
 echo "  - DNS_PROXY_PROT = $DNS_PROXY_PROT"
 echo "  - DNS_SPEED_CHECK_MODE = $DNS_SPEED_CHECK_MODE"
-echo "  - ALLOW_PROXY_DEVICE = $ALLOW_PROXY_DEVICE"
 echo "  - FIREWALL_CONFIG = $FIREWALL_CONFIG"
-echo "  - DNS_USER_CONF = $DNS_USER_CONF"
-echo "  - DIRECT_IPSET_RULES = $DIRECT_IPSET_RULES"
-echo "  - IPTABLES_RULES = $IPTABLES_RULES"
-echo "  - IP_ROUTE_RULES = $IP_ROUTE_RULES"
-echo "  - FIREWALL_RULES = $FIREWALL_RULES"
-echo "  - DIRECT_IP_LIST = $DIRECT_IP_LIST"
-echo "  - RESERVED_IP_LIST = $RESERVED_IP_LIST"
-echo "  - DIRECT_DOMAINS = $DIRECT_DOMAINS"
-echo "  - FORCE_DIRECT_DOMAINS = $FORCE_DIRECT_DOMAINS"
-echo "  - DIRECT_DNS_SERVERS = $DIRECT_DNS_SERVERS"
-echo "  - PROXY_DNS_SERVERS = $PROXY_DNS_SERVERS"
-echo "  - DNS_DIRECT_DOMAIN_RULES = $DNS_DIRECT_DOMAIN_RULES"
-echo "  - DNS_DIRECT_ADDRESS_RULES = $DNS_DIRECT_ADDRESS_RULES"
-echo "  - DNS_DIRECT_SERVER_RULES = $DNS_DIRECT_SERVER_RULES"
-echo "  - DNS_PROXY_SERVER_RULES = $DNS_PROXY_SERVER_RULES"
-echo "  - DNS_CONF = $DNS_CONF"
-echo "  - STARTUP_SCRIPT = $STARTUP_SCRIPT"
 echo "  - FORWARD_INTERFACE = $FORWARD_INTERFACE"
 echo "  - ENABLE_IPV6_DNS_SERVER = $ENABLE_IPV6_DNS_SERVER"
 
-# file path
-DIRECT_IP_LIST=$SHELL_FOLDER/$DIRECT_IP_LIST
-RESERVED_IP_LIST=$SHELL_FOLDER/$RESERVED_IP_LIST
-DIRECT_DOMAINS=$SHELL_FOLDER/$DIRECT_DOMAINS
-FORCE_DIRECT_DOMAINS=$SHELL_FOLDER/$FORCE_DIRECT_DOMAINS
-ALLOW_PROXY_DEVICE=$SHELL_FOLDER/$ALLOW_PROXY_DEVICE
-DIRECT_IPSET_RULES=$SHELL_FOLDER/$DIRECT_IPSET_RULES
-IPTABLES_RULES=$SHELL_FOLDER/$IPTABLES_RULES
-IPSET_RULES=$SHELL_FOLDER/$IPSET_RULES
-IP_ROUTE_RULES=$SHELL_FOLDER/$IP_ROUTE_RULES
+# src file
+DIRECT_IP_LIST=$SHELL_FOLDER/direct_ip_list
+RESERVED_IP_LIST=$SHELL_FOLDER/reserved_ip_list
+DIRECT_DOMAINS=$SHELL_FOLDER/direct_domain_list
+FORCE_DIRECT_DOMAINS=$SHELL_FOLDER/force_direct_domain_list
+ALLOW_PROXY_DEVICE=$SHELL_FOLDER/allow_proxy_device
+DIRECT_DNS_SERVERS=$SHELL_FOLDER/direct_dns_server_list
+PROXY_DNS_SERVERS=$SHELL_FOLDER/fallback_dns_server_list
+
+# dst file
+IPTABLES_RULES=$SHELL_FOLDER/output/iptables_rules.sh
+IP_ROUTE_RULES=$SHELL_FOLDER/output/ip_route_rules.sh
 NFT_RULES=$SHELL_FOLDER/output/proxy.nft
 FIREWALL_RULES=$SHELL_FOLDER/output/proxy.sh
-DIRECT_DNS_SERVERS=$SHELL_FOLDER/$DIRECT_DNS_SERVERS
-PROXY_DNS_SERVERS=$SHELL_FOLDER/$PROXY_DNS_SERVERS
-DNS_DIRECT_DOMAIN_RULES=$SHELL_FOLDER/$DNS_DIRECT_DOMAIN_RULES
-DNS_DIRECT_ADDRESS_RULES=$SHELL_FOLDER/$DNS_DIRECT_ADDRESS_RULES
-DNS_DIRECT_SERVER_RULES=$SHELL_FOLDER/$DNS_DIRECT_SERVER_RULES
-DNS_PROXY_SERVER_RULES=$SHELL_FOLDER/$DNS_PROXY_SERVER_RULES
-DNS_CONF=$SHELL_FOLDER/$DNS_CONF
+DNS_DIRECT_DOMAIN_RULES=$SHELL_FOLDER/output/direct-domain-rules.conf
+DNS_DIRECT_ADDRESS_RULES=$SHELL_FOLDER/output/direct-address-rules.conf
+DNS_DIRECT_SERVER_RULES=$SHELL_FOLDER/output/direct-dns-server-rules.conf
+DNS_PROXY_SERVER_RULES=$SHELL_FOLDER/output/fallback-dns-server-rules.conf
+DNS_CONF=$SHELL_FOLDER/output/smartdns.conf
+STARTUP_SCRIPT=$SHELL_FOLDER/output/startup.sh
+
+# config path
+CONFIG_IPTABLES_RULES=$CONFIG_PATH/iptables_rules.sh
+CONFIG_IP_ROUTE_RULES=$CONFIG_PATH/ip_route_rules.sh
+CONFIG_NFT_RULES=$CONFIG_PATH/proxy.nft
+CONFIG_FIREWALL_RULES=$CONFIG_PATH/proxy.sh
+CONFIG_DNS_DIRECT_DOMAIN_RULES=$CONFIG_PATH/direct-domain-rules.conf
+CONFIG_DNS_DIRECT_ADDRESS_RULES=$CONFIG_PATH/direct-address-rules.conf
+CONFIG_DNS_DIRECT_SERVER_RULES=$CONFIG_PATH/direct-dns-server-rules.conf
+CONFIG_DNS_PROXY_SERVER_RULES=$CONFIG_PATH/fallback-dns-server-rules.conf
+CONFIG_DNS_CONF=$CONFIG_PATH/smartdns.conf
+
 
 #[ -n "\"\$\(ipset list $china_ipset\)\"" ] && 
 
 rm -r ${SHELL_FOLDER}/output
 mkdir ${SHELL_FOLDER}/output
 
-# generate ipset rules
 echo "generate firewall rules"
 :> ${NFT_RULES}
 # echo "delete table ip proxy" >> ${FIREWALL_RULES}
@@ -89,7 +84,7 @@ echo "add rule ip proxy prerouting_redirect ether saddr @allow_proxy_device tcp 
     sed 's/DST_PORT/'$DNS_PROXY_PROT'/' >> ${NFT_RULES}
 
 :> ${FIREWALL_RULES}
-echo "nft -f ${NFT_RULES}" >> ${FIREWALL_RULES}
+echo "nft -f ${CONFIG_NFT_RULES}" >> ${FIREWALL_RULES}
 chmod +x ${FIREWALL_RULES}
 echo "generate firewall rules done"
 
@@ -141,24 +136,23 @@ else
 fi
 # disable ipv6 resolve by default
 echo "force-AAAA-SOA yes" >> ${DNS_CONF}
-echo "conf-file $DNS_DIRECT_ADDRESS_RULES" >> ${DNS_CONF}
-echo "conf-file $DNS_DIRECT_SERVER_RULES" >> ${DNS_CONF}
-echo "conf-file $DNS_PROXY_SERVER_RULES" >> ${DNS_CONF}
-echo "conf-file $DNS_DIRECT_DOMAIN_RULES" >> ${DNS_CONF}
+echo "conf-file $CONFIG_DNS_DIRECT_ADDRESS_RULES" >> ${DNS_CONF}
+echo "conf-file $CONFIG_DNS_DIRECT_SERVER_RULES" >> ${DNS_CONF}
+echo "conf-file $CONFIG_DNS_PROXY_SERVER_RULES" >> ${DNS_CONF}
+echo "conf-file $CONFIG_DNS_DIRECT_DOMAIN_RULES" >> ${DNS_CONF}
 # generate smartdns rules done
 
 # generate startup script
 :> ${STARTUP_SCRIPT}
-echo "#execute ipset rules" >> ${STARTUP_SCRIPT}
-# echo "sh $DIRECT_IPSET_RULES" >> ${STARTUP_SCRIPT}
+echo -e "#!/bin/sh\n" >> ${STARTUP_SCRIPT}
 echo "#execute iproute rules" >> ${STARTUP_SCRIPT}
-echo "sh $IP_ROUTE_RULES" >> ${STARTUP_SCRIPT}
+echo "sh $CONFIG_IP_ROUTE_RULES" >> ${STARTUP_SCRIPT}
 echo "#execute iptables rules" >> ${STARTUP_SCRIPT}
-echo "[ -z \"\$(cat $FIREWALL_CONFIG | grep \"$FIREWALL_RULES\")\" ] \\
+echo "[ -z \"\$(cat $FIREWALL_CONFIG | grep \"$CONFIG_FIREWALL_RULES\")\" ] \\
     && echo \"\" >> $FIREWALL_CONFIG \\
     && echo \"config include 'proxy'\" >> $FIREWALL_CONFIG \\
     && echo -e \"\toption type 'script'\" >> $FIREWALL_CONFIG \\
-    && echo -e \"\toption path '$FIREWALL_RULES'\" >> $FIREWALL_CONFIG" >> ${STARTUP_SCRIPT}
+    && echo -e \"\toption path '$CONFIG_FIREWALL_RULES'\" >> $FIREWALL_CONFIG" >> ${STARTUP_SCRIPT}
 echo "fw4 restart" >> ${STARTUP_SCRIPT}
 echo "#smartdns conf" >> ${STARTUP_SCRIPT}
 # echo "cp $SHELL_FOLDER/smartdns.conf /var/etc/smartdns/" >> ${STARTUP_SCRIPT}
@@ -166,6 +160,6 @@ echo "#smartdns conf" >> ${STARTUP_SCRIPT}
 #     && echo \"\" >> $DNS_USER_CONF \\
 #     && echo \"conf-file $DNS_CONF\" >> $DNS_USER_CONF" >> ${STARTUP_SCRIPT}
 echo "killall -q smartdns" >> ${STARTUP_SCRIPT} 
-echo "smartdns -c $DNS_CONF" >> ${STARTUP_SCRIPT} 
+echo "smartdns -c $CONFIG_DNS_CONF" >> ${STARTUP_SCRIPT} 
 chmod +x ${STARTUP_SCRIPT}
 
