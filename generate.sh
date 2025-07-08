@@ -14,6 +14,8 @@ echo "  - DNS_SPEED_CHECK_MODE = $DNS_SPEED_CHECK_MODE"
 echo "  - FIREWALL_CONFIG = $FIREWALL_CONFIG"
 echo "  - FORWARD_INTERFACE = $FORWARD_INTERFACE"
 echo "  - ENABLE_IPV6_DNS_SERVER = $ENABLE_IPV6_DNS_SERVER"
+echo "  - NETEASE_MUSIC_SET = $NETEASE_MUSIC_SET"
+echo "  - NETEASE_MUSIC_TABLE = $NETEASE_MUSIC_TABLE"
 
 # src file
 DIRECT_IP_LIST=$SHELL_FOLDER/direct_ip_list
@@ -23,12 +25,14 @@ FORCE_DIRECT_DOMAINS=$SHELL_FOLDER/force_direct_domain_list
 ALLOW_PROXY_DEVICE=$SHELL_FOLDER/allow_proxy_device
 DIRECT_DNS_SERVERS=$SHELL_FOLDER/direct_dns_server_list
 PROXY_DNS_SERVERS=$SHELL_FOLDER/fallback_dns_server_list
+UNBLOCK_NETEASE_MUSIC=$SHELL_FOLDER/unblock_netease_music
 
 # dst file
 IPTABLES_RULES=$SHELL_FOLDER/output/iptables_rules.sh
 IP_ROUTE_RULES=$SHELL_FOLDER/output/ip_route_rules.sh
 NFT_RULES=$SHELL_FOLDER/output/proxy.nft
 FIREWALL_RULES=$SHELL_FOLDER/output/proxy.sh
+UNBLOCK_NETEASE_MUSIC_RULES=$SHELL_FOLDER/output/unblock-netease-music-rules.conf
 DNS_DIRECT_DOMAIN_RULES=$SHELL_FOLDER/output/direct-domain-rules.conf
 DNS_DIRECT_ADDRESS_RULES=$SHELL_FOLDER/output/direct-address-rules.conf
 DNS_DIRECT_SERVER_RULES=$SHELL_FOLDER/output/direct-dns-server-rules.conf
@@ -40,6 +44,7 @@ CONFIG_IPTABLES_RULES=$CONFIG_PATH/iptables_rules.sh
 CONFIG_IP_ROUTE_RULES=$CONFIG_PATH/ip_route_rules.sh
 CONFIG_NFT_RULES=$CONFIG_PATH/proxy.nft
 CONFIG_FIREWALL_RULES=$CONFIG_PATH/proxy.sh
+CONFIG_UNBLOCK_NETEASE_MUSIC_RULES=$CONFIG_PATH/unblock-netease-music-rules.conf
 CONFIG_DNS_DIRECT_DOMAIN_RULES=$CONFIG_PATH/direct-domain-rules.conf
 CONFIG_DNS_DIRECT_ADDRESS_RULES=$CONFIG_PATH/direct-address-rules.conf
 CONFIG_DNS_DIRECT_SERVER_RULES=$CONFIG_PATH/direct-dns-server-rules.conf
@@ -109,6 +114,7 @@ echo "generate smartdns rules"
 sed -e "s|\(.*\)|domain-rules /\1/ -speed-check-mode $DNS_SPEED_CHECK_MODE -nameserver direct|" ${DIRECT_DOMAINS} > ${DNS_DIRECT_DOMAIN_RULES}
 # add direct domains to group and insert resolve result to ipset (mainly for improve steam download speed)
 sed -e "s|\(.*\)|domain-rules /\1/ -speed-check-mode $DNS_SPEED_CHECK_MODE -nameserver direct -nftset '#4:ip#proxy#direct'|" ${FORCE_DIRECT_DOMAINS} >> ${DNS_DIRECT_DOMAIN_RULES}
+sed -e "s|\(.*\)|domain-rules /\1/ -speed-check-mode $DNS_SPEED_CHECK_MODE -nameserver direct -nftset '#4:inet#$NETEASE_MUSIC_TABLE#$NETEASE_MUSIC_SET'|" ${UNBLOCK_NETEASE_MUSIC} >> ${UNBLOCK_NETEASE_MUSIC_RULES}
 # enable ipv6 resolve for direct domains
 sed -e "s|\(.*\)|address /\1/-6|" ${DIRECT_DOMAINS} > ${DNS_DIRECT_ADDRESS_RULES}
 sed -e "s|\(.*\)|server \1 -group direct --exclude-default-group|" ${DIRECT_DNS_SERVERS} > ${DNS_DIRECT_SERVER_RULES}
@@ -139,6 +145,7 @@ else
 fi
 # disable ipv6 resolve by default
 echo "force-AAAA-SOA yes" >> ${DNS_CONF}
+echo "conf-file $CONFIG_UNBLOCK_NETEASE_MUSIC_RULES" >> ${DNS_CONF}
 echo "conf-file $CONFIG_DNS_DIRECT_ADDRESS_RULES" >> ${DNS_CONF}
 echo "conf-file $CONFIG_DNS_DIRECT_SERVER_RULES" >> ${DNS_CONF}
 echo "conf-file $CONFIG_DNS_PROXY_SERVER_RULES" >> ${DNS_CONF}
